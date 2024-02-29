@@ -4,6 +4,7 @@ const bodyParser = require("body-parser");
 const morgan = require("morgan");
 
 const wikiRouter = require("./routes/wikiRoute");
+const userRouter = require("./routes/userRoutes");
 const globalErrorHandler = require("./controller/errorController");
 const AppError = require("./utils/appError");
 
@@ -15,6 +16,7 @@ app.use(morgan("dev"));
 
 // Routes
 app.use("/api/v1/wiki", wikiRouter);
+app.use("/api/v1/user", userRouter);
 
 // Handling unhandled routes
 // For all http methods

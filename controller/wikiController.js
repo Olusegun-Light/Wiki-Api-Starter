@@ -28,7 +28,7 @@ exports.getAllArticles = catchAsync(async (req, res, next) => {
 
 
 
-exports.createArticle = catchAsync(async (req, res) => {
+exports.createArticle = catchAsync(async (req, res, next) => {
   const { title, content, author } = req.body;
 
   // if (!title || !content || !author) {
@@ -53,7 +53,7 @@ exports.updateArticle = catchAsync(async (req, res, next) => {
     runValidators: true,
   });
   if (!article) {
-    return next(new Error("No article found with that ID"));
+    return next(new AppError("No article found with that ID", 400));
   }
   res.status(200).json({
     status: "success",
@@ -63,10 +63,10 @@ exports.updateArticle = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.deleteArticle = catchAsync(async (req, res) => {
+exports.deleteArticle = catchAsync(async (req, res, next) => {
   const article = await Article.findByIdAndDeleted(req.params.id);
   if (!article) {
-    return next(new Error("No article found with that ID"));
+    return next(new AppError("No article found with that ID", 400));
   }
   res.status(204).json({
     status: "success",

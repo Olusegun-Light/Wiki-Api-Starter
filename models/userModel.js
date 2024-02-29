@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
+const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -13,10 +14,6 @@ const userSchema = new mongoose.Schema({
     unique: true,
     lowercase: true,
     validate: [validator.isEmail, "Please provide a valid email!"],
-  },
-  photo: {
-    type: String,
-    default: "default.jpg",
   },
   password: {
     type: String,
@@ -35,18 +32,32 @@ const userSchema = new mongoose.Schema({
       message: "Password does not match",
     },
   },
-  passwordChangedAt: Date,
-
-  passwordResetToken: String,
-
-  passwordResetExpires: Date,
-
-  active: {
-    type: Boolean,
-    default: true,
-    select: false,
-  },
+  role: {
+    type: String,
+    enum: ["user", "admin", "author"],
+    default: "user"
+  }
 });
+
+userSchema.pre("save", async function (next) {
+  // Run only when password is modified
+  if (!this.isModified("password")) return next();
+
+  // hash password with cost of 12
+  this.password = await bcrypt.hash(this.password, 12);
+
+  // Deleted the passwordConfirm field
+  this.passwordConfirm = undefined;
+
+  next();
+});
+
+userSchema.methods.correctPassword = async function (
+  candidatePassword,
+  userPassword
+) {
+  return await bcrypt.compare(candidatePassword, userPassword);
+};
 
 const User = mongoose.model("User", userSchema);
 

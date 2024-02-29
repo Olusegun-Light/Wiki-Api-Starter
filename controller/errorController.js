@@ -53,13 +53,13 @@ module.exports = (err, req, res, next) => {
   //   status: err.statusCode,
   //   message: err
   // })
-  if (process.env.NODE_ENV === "development") {
+  if (process.env.NODE_ENV_DEV === "development") {
     sendErrorDev(err, res);
   } else if (process.env.NODE_ENV === "production") {
-    let error = {...err}
+    let error = { ...err };
     if (err.name === "CastError") error = handleCastErrorDB(error);
-    if(err.code === 11000) error = handleDuplicateFieldDB(error)
-    if (err.name === "ValidationError") error = handleValidationErrorDB(error)
+    if (err.code === 11000) error = handleDuplicateFieldDB(error);
+    if (err.name === "ValidationError") error = handleValidationErrorDB(error);
 
     sendErrorProd(error, res);
   }
