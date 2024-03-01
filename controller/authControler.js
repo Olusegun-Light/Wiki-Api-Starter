@@ -1,8 +1,8 @@
 const jwt = require("jsonwebtoken");
+const { promisify } = require("util");
 
 const User = require("./../models/userModel");
 const catchAsync = require("../utils/catchAsync");
-const jsonwebtoken = require("jsonwebtoken");
 const AppError = require("../utils/appError");
 
 const signToken = (id) => {
@@ -40,9 +40,10 @@ exports.login = catchAsync(async (req, res, next) => {
 
   // 2) Check if user exists && password is correct
   const user = await User.findOne({ email }).select("+password");
-  const correct = await user.correctPassword(password, user.password);
-// wrong email not working
-  if (!user || !correct) {
+  // console.log(user)
+
+  // Fixed
+  if (!user || !(await user.correctPassword(password, user.password))) {
     return next(new AppError("Incorrect email or password", 401));
   }
 
@@ -54,3 +55,54 @@ exports.login = catchAsync(async (req, res, next) => {
     token,
   });
 });
+
+exports.protect = catchAsync(async (req, res, next) => {
+  // 1) Getting token and check if it's there
+  let token;
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer")
+  ) {
+    token = req.headers.authorization.split(" ")[1];
+  }
+  console.log(token);
+
+  if (!token) {
+    return next(
+      new AppError("You are not logged in! Pease log in to get access", 401)
+    );
+  }
+
+  // 2) Verification Token
+  const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+  console.log(decoded);
+  // 3) Check if user still exists
+  const freshUser = await User.findById(decoded.id);
+  if (!freshUser) {
+    return next(
+      new AppError("The user belonging to this token does not exist.", 401)
+    );
+  }
+
+  // 4) Check if the user changed password after token was issued
+  if (freshUser.changedPasswordAfter(decoded.iat)) {
+    return next(
+      new AppError("User recently changed password! Please login again.", 401)
+    );
+  }
+
+  // Grant access to protected  route
+  req.user = freshUser;
+  next();
+});
+
+exports.restrictTo = (...roles) => {
+  return (req, res, next) => {
+    // roles ("admin", "user", "author")
+    if (!roles.includes(req.user.role)) {
+      return next(
+        new AppError("You do not have permission to perform this action", 403)
+      );
+    }
+  };
+};
