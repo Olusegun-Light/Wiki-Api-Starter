@@ -17,7 +17,6 @@ const AppError = require("./utils/appError");
 
 const app = express();
 app.use(bodyParser.json());
-app.enable("trust proxy");
 
 // Set security HTTP headers
 app.use(helmet())
