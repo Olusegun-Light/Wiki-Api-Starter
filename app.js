@@ -43,6 +43,9 @@ app.use(mongoSanitize());
 app.use(hpp())
 
 // Routes
+app.get("/", (req, res) => {
+  res.send("<h1>Jobs Api </h1>")
+})
 app.use("/api/v1/wiki", wikiRouter);
 app.use("/api/v1/user", userRouter);
 
